@@ -170,18 +170,25 @@ contains
 
     if (debug)write(logunit,'(a)')'enter '//trim(subname)
 
-    wgtsfile = trim(wdir)//'tripole.'//trim(fsrc)//'.'//vgrid1//'.to.Ct.bilinear.nc'
-    call getfield(fname, vname1, dims=dims, field=vecpair(:,1), wgts=trim(wgtsfile))
-    if (debug)write(logunit,'(a)')'wgtsfile for 2d vector '//trim(vname1)//'   '//trim(wgtsfile)
-    wgtsfile = trim(wdir)//'tripole.'//trim(fsrc)//'.'//vgrid2//'.to.Ct.bilinear.nc'
-    call getfield(fname, vname2, dims=dims, field=vecpair(:,2), wgts=trim(wgtsfile))
-    if (debug)write(logunit,'(a)')'wgtsfile for 2d vector '//trim(vname2)//'   '//trim(wgtsfile)
-
+    ! IJ->EW
     urot = 0.0; vrot = 0.0
     do ii = 1,dims(1)*dims(2)
-       urot(ii) = vecpair(ii,1)*cosrot(ii) + vecpair(ii,2)*sinrot(ii)
-       vrot(ii) = vecpair(ii,2)*cosrot(ii) - vecpair(ii,1)*sinrot(ii)
+       urot(ii) = vecpair(ii,1)*cosrot(ii) - vecpair(ii,2)*sinrot(ii)
+       vrot(ii) = vecpair(ii,2)*cosrot(ii) + vecpair(ii,1)*sinrot(ii)
     end do
+    vecpair(:,1) = urot(:)
+    vecpair(:,2) = vrot(:)
+    urot = 0.0
+    vrot = 0.0
+
+    ! Bu->Ct
+    wgtsfile = trim(wdir)//'tripole.'//trim(fsrc)//'.'//vgrid1//'.to.Ct.bilinear.nc'
+    call remap(trim(wgtsfile), src_field=vecpair(:,1), dst_field=urot)
+    if (debug)write(logunit,'(a)')'wgtsfile for 2d vector '//trim(vname1)//'   '//trim(wgtsfile)
+    wgtsfile = trim(wdir)//'tripole.'//trim(fsrc)//'.'//vgrid2//'.to.Ct.bilinear.nc'
+    call remap(trim(wgtsfile), src_field=vecpair(:,2), dst_field=vrot)
+    if (debug)write(logunit,'(a)')'wgtsfile for 2d vector '//trim(vname2)//'   '//trim(wgtsfile)
+
     vecpair(:,1) = urot(:)
     vecpair(:,2) = vrot(:)
 
@@ -376,7 +383,6 @@ contains
     real(kind=8) :: sum
 
     if (debug)write(logunit,'(a)')'enter '//trim(subname)//' weights = '//trim(fname)
-    print '(a)','enter '//trim(subname)//' weights = '//trim(fname)
 
     ! retrieve the weights
     call nf90_err(nf90_open(trim(fname), nf90_nowrite, ncid), 'open: '//fname)
@@ -399,14 +405,14 @@ contains
     call nf90_err(nf90_get_var(ncid,      id,  S),'get variable: S')
     call nf90_err(nf90_close(ncid), 'close: '//fname)
 
-    print *,size(src_field,1),size(src_field,2)
-    print *,minval(src_field(:,1)),maxval(src_field(:,1)),minval(src_field(:,2)),maxval(src_field(:,2))
+    !print *,size(src_field,1),size(src_field,2)
+    !print *,minval(src_field(:,1)),maxval(src_field(:,1)),minval(src_field(:,2)),maxval(src_field(:,2))
 
     sum = 0.0
     do i = 1,n_s
        ii = row(i); jj = col(i)
        sum = S(i)*src_field(jj,1)
-       if( abs(src_field(jj,1)) .ge. 1.0e-6)print '(i6,3f12.5)',i,S(i),sum,src_field(jj,1)
+       !if( abs(src_field(jj,1)) .ge. 1.0e-6)print '(i6,3f12.5)',i,S(i),sum,src_field(jj,1)
     end do
 
     dst_field = 0.0
@@ -417,10 +423,10 @@ contains
        !   print '(i6,5f10.5)',i,S(i),src_field(jj,:),dst_field(ii,:)
        !end if
     enddo
-    print *,minval(dst_field),maxval(dst_field)
+    !print *,minval(dst_field),maxval(dst_field)
 
     if (debug) write(logunit,'(a)')'exit '//trim(subname)
-    print '(a)','exit '//trim(subname)//' weights = '//trim(fname)
+    !print '(a)','exit '//trim(subname)//' weights = '//trim(fname)
   end subroutine remap2d
 
   !----------------------------------------------------------

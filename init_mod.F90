@@ -92,7 +92,7 @@ contains
 
      fsrc = 'mx025'
      fdst = 'mx100'
-     debug = .false.
+     debug = .true.
      do_ocnpost = .false.
 
   !   ! set grid names
