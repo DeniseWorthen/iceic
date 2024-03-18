@@ -170,6 +170,9 @@ contains
 
     if (debug)write(logunit,'(a)')'enter '//trim(subname)
 
+    call getfield(fname, vname1, dims=dims, field=vecpair(:,1))
+    call getfield(fname, vname2, dims=dims, field=vecpair(:,2))
+
     ! IJ->EW
     urot = 0.0; vrot = 0.0
     do ii = 1,dims(1)*dims(2)
@@ -182,10 +185,10 @@ contains
     vrot = 0.0
 
     ! Bu->Ct
-    wgtsfile = trim(wdir)//'tripole.'//trim(fsrc)//'.'//vgrid1//'.to.Ct.bilinear.nc'
+    wgtsfile = trim(wdir)//'tripole.'//trim(fsrc)//'.'//vgrid1//'.to.'//trim(fsrc)//'.Ct.bilinear.nc'
     call remap(trim(wgtsfile), src_field=vecpair(:,1), dst_field=urot)
     if (debug)write(logunit,'(a)')'wgtsfile for 2d vector '//trim(vname1)//'   '//trim(wgtsfile)
-    wgtsfile = trim(wdir)//'tripole.'//trim(fsrc)//'.'//vgrid2//'.to.Ct.bilinear.nc'
+    wgtsfile = trim(wdir)//'tripole.'//trim(fsrc)//'.'//vgrid2//'.to.'//trim(fsrc)//'.Ct.bilinear.nc'
     call remap(trim(wgtsfile), src_field=vecpair(:,2), dst_field=vrot)
     if (debug)write(logunit,'(a)')'wgtsfile for 2d vector '//trim(vname2)//'   '//trim(wgtsfile)
 

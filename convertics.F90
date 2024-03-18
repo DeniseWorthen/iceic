@@ -15,7 +15,7 @@ program convertics
   integer, parameter :: dstnx = 360 , dstny =  320
 
   character(len=120) :: dirgrd = '/scratch1/NCEPDEV/climate/Denise.Worthen/grids-20240311/'
-  character(len=120) :: dirsrc = '/scratch1/NCEPDEV/nems/Denise.Worthen/WORK/CICE5_ICgen/'
+  character(len=120) :: dirsrc = '/scratch1/NCEPDEV/nems/Denise.Worthen/WORK/icgit/'
   character(len=120) :: fwgt, input_file
 
   real(kind=8), dimension(srcnx*srcny) :: angsrc, cosrotsrc, sinrotsrc
@@ -56,13 +56,14 @@ program convertics
   cosrotdst = cos(angdst)
   sinrotdst = sin(angdst)
 
-  ! get the src velocities, rotated EW on Bu and return on Ct
+  ! get the src velocities, rotate to EW on Bu and return on Ct
   input_file = trim(dirsrc)//'iced.2011-10-01-43200.nc'
   call getvecpair(trim(input_file), trim(dirgrd), cosrotsrc, sinrotsrc, 'uvel', 'Bu', &
        'vvel', 'Bu', dims=(/srcnx,srcny/), vecpair=vecpairsrc)
   !print *,vecpairsrc(:,1),vecpairsrc(:,2)
 
   call dumpnc('testsrcCt_ew.nc','vecsrc', dims=(/srcnx,srcny/), nflds=2, field=vecpairsrc)
+
   !------
   !------
 
@@ -116,6 +117,7 @@ program convertics
   call ESMF_FieldRegrid(fldsrc, flddst, routehandle=rh, rc=rc)
   if (chkerr(rc,__LINE__,u_FILE_u)) call ESMF_Finalize(endflag=ESMF_END_ABORT)
   vecpairdst(:,2) = dstptr(:)
+
   call dumpnc('testdstCt_ew.nc','vecdst', dims=(/dstnx,dstny/), nflds=2, field=vecpairdst)
 
   ! stagger back to Bu
