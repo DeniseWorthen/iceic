@@ -90,8 +90,8 @@ contains
      open(newunit=logunit, file='ic.log',form='formatted')
   !   if (debug) write(logunit, '(a)')'input file: '//trim(input_file)
 
-     fsrc = 'mx025'
-     fdst = 'mx100'
+     fsrc = '025'
+     fdst = '100'
      debug = .true.
      do_ocnpost = .false.
 

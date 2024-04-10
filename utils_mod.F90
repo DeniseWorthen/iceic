@@ -164,36 +164,25 @@ contains
 
     ! local variables
     integer :: ii
-    real(kind=8), dimension(dims(1)*dims(2)) :: urot, vrot
+    real(kind=8) :: urot, vrot
     character(len=240) :: wgtsfile
     character(len=20) :: subname = 'getvecpair2d'
 
     if (debug)write(logunit,'(a)')'enter '//trim(subname)
 
-    call getfield(fname, vname1, dims=dims, field=vecpair(:,1))
-    call getfield(fname, vname2, dims=dims, field=vecpair(:,2))
-
-    ! IJ->EW
-    urot = 0.0; vrot = 0.0
-    do ii = 1,dims(1)*dims(2)
-       urot(ii) = vecpair(ii,1)*cosrot(ii) - vecpair(ii,2)*sinrot(ii)
-       vrot(ii) = vecpair(ii,2)*cosrot(ii) + vecpair(ii,1)*sinrot(ii)
-    end do
-    vecpair(:,1) = urot(:)
-    vecpair(:,2) = vrot(:)
-    urot = 0.0
-    vrot = 0.0
-
-    ! Bu->Ct
-    wgtsfile = trim(wdir)//'tripole.'//trim(fsrc)//'.'//vgrid1//'.to.'//trim(fsrc)//'.Ct.bilinear.nc'
-    call remap(trim(wgtsfile), src_field=vecpair(:,1), dst_field=urot)
+    wgtsfile = trim(wdir)//'tripole.mx'//trim(fsrc)//'.'//vgrid1//'.to.Ct.bilinear.nc'
+    call getfield(fname, vname1, dims=dims, field=vecpair(:,1), wgts=trim(wgtsfile))
     if (debug)write(logunit,'(a)')'wgtsfile for 2d vector '//trim(vname1)//'   '//trim(wgtsfile)
-    wgtsfile = trim(wdir)//'tripole.'//trim(fsrc)//'.'//vgrid2//'.to.'//trim(fsrc)//'.Ct.bilinear.nc'
-    call remap(trim(wgtsfile), src_field=vecpair(:,2), dst_field=vrot)
+    wgtsfile = trim(wdir)//'tripole.mx'//trim(fsrc)//'.'//vgrid2//'.to.Ct.bilinear.nc'
+    call getfield(fname, vname2, dims=dims, field=vecpair(:,2), wgts=trim(wgtsfile))
     if (debug)write(logunit,'(a)')'wgtsfile for 2d vector '//trim(vname2)//'   '//trim(wgtsfile)
 
-    vecpair(:,1) = urot(:)
-    vecpair(:,2) = vrot(:)
+    do ii = 1,dims(1)*dims(2)
+       urot = vecpair(ii,1)*cosrot(ii) - vecpair(ii,2)*sinrot(ii)
+       vrot = vecpair(ii,2)*cosrot(ii) + vecpair(ii,1)*sinrot(ii)
+       vecpair(ii,1) = urot
+       vecpair(ii,2) = vrot
+    end do
 
     if (debug) write(logunit,'(a)')'exit '//trim(subname)
   end subroutine getvecpair2d

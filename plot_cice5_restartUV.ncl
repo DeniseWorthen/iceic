@@ -8,24 +8,25 @@
 ;************************************************
 ;
 ;************************************************
-
-  batch = "no"
+begin
 
   hemi="NH"
   ;hemi="SH"
 
-  ;minlat = 66.0
+  minlat = 66.0
   ;minlat = 76.0
-  ;minlat = 89.8
-  minlat = 88.0
+  ;minlat = 88.0
+  ;minlat=80.0
+  ;vmag = 0.5
+  ;vthn = 0.015
+  vthn = 0.008
+  vmag = 1.0
 
-   vmag = 0.50
-   vthn = 0.01
-   ;vthn = 0.0
+  rad2deg=1.0
+  ;rad2deg=180.d0/acos(-1.0d0)
 
-   rad2deg=1.0
-   ;rad2deg=180.d0/acos(-1.0d0)
-begin
+  plot_src = 0
+
 ;************************************************
 ; read in netCDF file
 ;************************************************
@@ -34,69 +35,77 @@ begin
   RT2 = "/scratch3/NCEPDEV/stmp2/Denise.Worthen/"
   RT3 = "/scratch3/NCEPDEV/stmp3/Denise.Worthen/"
   RT4 = "/scratch4/NCEPDEV/stmp4/Denise.Worthen/"
+  ; ics from baseline
+  ICBL = "/scratch2/NAGAPE/epic/UFS-WM_RT/NEMSfv3gfs/input-data-20221101/CICE_IC/"
 
-  ;cdate = "2013040100"
-  ;cdate = "2011090100"
-  cdate = "2011-10-01-43200"
-
-  ;icdir = "/scratch2/NAGAPE/epic/UFS-WM_RT/NEMSfv3gfs/BM_IC-20220207/2013040100/cpc/"
-  ;cice5 = "cice5_model_0.25.res_"+cdate+".nc"
-
-  icdir="/scratch1/NCEPDEV/nems/Denise.Worthen/WORK/icgit/"
-  ;cice5="testdstCt_ew.nc"
-  cice5="testdstBu_ij.nc"
-  ;cice5="testdstBu_ew.nc"
-  ;icdir = "/scratch2/NAGAPE/epic/UFS-WM_RT/NEMSfv3gfs/develop-20240305/datm_cdeps_mx025_gefs_intel/RESTART/"
-  ;cice5 = "iced."+cdate+".nc"
-  ; this copy contains the center lats and lons in degrees, which
-  ; is more convenient for plotting
-  dirsrc = "/scratch1/NCEPDEV/climate/Denise.Worthen/grids-20240311/"
-  ; load the grid file
-  ;gr = addfile(dirsrc+"grid_cice_NEMS_mx025.nc","r")
-  ;gr = addfile(dirsrc+"grid_cice_NEMS_mx100.nc","r")
-  gr = addfile(dirsrc+"tripole.mx100.nc","r")
-
+  cres = "025"
   icelonname = "lonBu"
   icelatname = "latBu"
-   anglename = "angle"
-   plottitle = cice5
+  anglename = "angle"
+  plottitle = "restart"
 
-  ;print(icdir+cice5)
-  ifile = addfile(icdir+cice5,"r")
-  wkstitle="restarts"+cdate
+  if (plot_src .eq. 1)then
+    grdsrc="/scratch1/NCEPDEV/nems/role.ufsutils/ufs_utils/reg_tests/cpld_gridgen/baseline_data/"+cres+"/"
+    gr = addfile(grdsrc+"tripole.mx"+cres+".nc","r")
 
-  rotang = gr->$anglename$
+    ;icdir="/scratch1/NCEPDEV/stmp2/Denise.Worthen/tripole/gefs.rundir/"
+    ;fname="cice_model.res.nc"
+    ;ifile = addfile(icdir+fname,"r")
+    ;print(ifile)
+    ;vmag = 1.0
+    icdir="/scratch1/NCEPDEV/stmp2/Denise.Worthen/tripole/fix.mx025/"
+    fname = "iced.2011-10-03-00000.nc"
+    ifile = addfile(icdir+"RESTART/"+fname,"r")
+    vmag = 1.0
+
+      wkstitle=fname
+      ut = ifile->uvel(:,:)
+      vt = ifile->vvel(:,:)
+    end if
+
+    if (plot_src .eq. 0)then
+      icdir="./"
+      ifile = addfile(icdir+"testdstCt_ij.nc","r")
+      grdsrc="/scratch1/NCEPDEV/nems/role.ufsutils/ufs_utils/reg_tests/cpld_gridgen/baseline_data/100/"
+      gr = addfile(grdsrc+"tripole.mx100.nc","r")
+
       ut = ifile->vecdst(0,:,:)
       vt = ifile->vecdst(1,:,:)
-  ;ut = ifile->uvel
-  ;vt = ifile->vvel
-      ;printVarSummary(ut)
-      ;print(ut(1079,:)+"   "+vt(1079,:))
+    end if
+    print("ut min = "+min(ut)+" ut max = "+max(ut))
+    print("vt min = "+min(vt)+" vt max = "+max(vt))
 
-  ;ut@_FillValue =  default_fillvalue("double")
-  ;vt@_FillValue =  default_fillvalue("double")
+    ut@lon2d=gr->$icelonname$
+    ut@lat2d=gr->$icelatname$
+    vt@lon2d=gr->$icelonname$
+    vt@lat2d=gr->$icelatname$
 
-  ut@lon2d=gr->$icelonname$*rad2deg
-  ut@lat2d=gr->$icelatname$*rad2deg
-  vt@lon2d=gr->$icelonname$*rad2deg
-  vt@lat2d=gr->$icelatname$*rad2deg
+    ;maskvar = gr->wet(:,:)
+    maskvar = todouble(gr->wet(:,:))
+    maskvar@lon2d = gr->lonBu
+    maskvar@lat2d = gr->latBu
+    printVarSummary(maskvar)
+ ; copy metadata, rotang here is same sign as internal CICE (-1*sin,+1*cos mom)
+    rotang = gr->$anglename$
+    printVarSummary(rotang)
+    printVarSummary(ut)
+    urot = ut
+    vrot = vt
+    urot = cos(rotang)*ut - sin(rotang)*vt
+    vrot = sin(rotang)*ut + cos(rotang)*vt
 
-  ; copy metadata, rotang here is same sign as internal CICE (-1*sin,+1*cos mom)
-  urot = ut
-  vrot = vt
-  ;urot = 0.0
-  ;vrot = 0.0
-  urot =  cos(rotang)*ut - sin(rotang)*vt
-  vrot =  sin(rotang)*ut + cos(rotang)*vt
+    urot = where(urot@lat2d .ge. minlat .and. maskvar .eq. 1.0, urot, 0.0)
+    vrot = where(vrot@lat2d .ge. minlat .and. maskvar .eq. 1.0, vrot, 0.0)
+    print("urot min = "+min(urot)+" urot max = "+max(urot))
+    print("vrot min = "+min(vrot)+" vrot max = "+max(vrot))
 
-  ;printVarSummary(urot)
+   ;urot = where(maskvar .eq. 0.0, default_fillvalue(typeof(urot)), urot)
+   ;vrot = where(maskvar .eq. 0.0, default_fillvalue(typeof(vrot)), vrot)
 
-  urot = where(urot@lat2d .ge. minlat, urot, 0.0)
-  vrot = where(vrot@lat2d .ge. minlat, vrot, 0.0)
-  print("urot min = "+min(urot)+" urot max = "+max(urot))
-  print("vrot min = "+min(vrot)+" vrot max = "+max(vrot))
 
-  levs = (/-0.2, 0.2, .02/)
+    levs = (/-0.2, 0.2, .02/)
+  ;levs = (/-0.05, 0.05, .001/)
+
 
 ;************************************************
 ; add a poly line showing the polar seem along
@@ -118,23 +127,24 @@ begin
   wks   = gsn_open_wks (wkstype,"cice_uv")              ; send graphics to X11 window
 
   plot = new(2,graphic)
-  ;dum = new(2,graphic)
+  dum = new(2,graphic)
 
   res                      = True        ; plot mods desired
   res@gsnDraw              = False       ; do not draw until the end
   res@gsnFrame             = False       ; do not automatically advance 'frame'
 
+  res@cnFillMode = "RasterFill"
   res@cnFillOn          = True                  ; color fill
   res@cnLinesOn         = False                 ; no contour lines
   res@cnLineLabelsOn    = False
-  res@lbLabelBarOn      = True
+  res@lbLabelBarOn      = False
 
   res@vcRefMagnitudeF       = vmag              ; vec magnitude
   res@vcRefLengthF          = 0.10              ; size of ref vector
   ;res@vcMonoLineArrowColor  = True             ; multiple colors desired
   res@vcMinDistanceF        = vthn              ; thins arrows near pole
   ;res@vcLineArrowThicknessF = 1.5
-  res@vcGlyphStyle          = "CurlyVector"
+  ;res@vcGlyphStyle          = "CurlyVector"
   ;res@vcPositionMode = "ArrowTail"
 
   res@gsnPolar   =  hemi                         ; specify the hemisphere
@@ -152,6 +162,9 @@ begin
   res@cnMaxLevelValF  = levs(1)                      ; set the maximum contour level
   res@cnLevelSpacingF = levs(2)                      ; set the interval between contours
   res@cnFillPalette        = "BlueWhiteOrangeRed"              ; choose colormap
+
+  ;res@cnMissingValPerimOn     = False            ; turn on the missing value perimeter
+  res@cnMissingValFillColor  = "gray"
 
 ;************************************************
 ; Resources for the polyline
@@ -173,7 +186,7 @@ begin
   resP@gsnFrame              = False                ; don't advance frame yet
   resP@gsnPanelYWhiteSpacePercent = 5
   resP@gsnPanelYWhiteSpacePercent = 5
-  resP@gsnPanelLabelBar      = False                 ; turn on a common labelbar for the entire panel plot
+  resP@gsnPanelLabelBar      = True                 ; turn on a common labelbar for the entire panel plot
 
   ;resP@gsnPanelMainFontHeightF = 0.015           ; new resource added in NCL V6.4.0
   resP@gsnPanelMainString = plottitle
@@ -183,17 +196,17 @@ begin
 ;************************************************
 
   ;plot = gsn_csm_vector_scalar_map_polar(wks,urot,vrot,avar,res)    ; create the plot
-  ;plot = gsn_csm_vector_map_polar(wks,urot,vrot,res)    ; create the plot
-  plot(0) = gsn_csm_contour_map_polar(wks,urot,res)    ; create the plot
-  plot(1) = gsn_csm_contour_map_polar(wks,vrot,res)
+  plot(0) = gsn_csm_vector_map_polar(wks,urot,vrot,res)    ; create the plot
+  ;plot(0) = gsn_csm_contour_map_polar(wks,urot,res)    ; create the plot
+  ;plot(1) = gsn_csm_contour_map_polar(wks,vrot,res)
   ;dum(0) gsn_add_polyline(wks,plot(0),(/lon1, lon2/) , (/lat1, lat2/) ,pres)
   ;dum(1) gsn_add_polyline(wks,plot(1),(/lon1, lon2/) , (/lat1, lat2/) ,pres)
   ;draw(plot)
   ;frame(wks)
 
   ;plot = gsn_csm_contour_map_polar(wks,vvar,res)    ; create the plot
-  dum= gsn_add_polyline(wks,plot(0),(/lon1, lon2/) , (/lat1, lat2/) ,pres)
-  dum= gsn_add_polyline(wks,plot(1),(/lon1, lon2/) , (/lat1, lat2/) ,pres)
+  dum(0)= gsn_add_polyline(wks,plot(0),(/lon1, lon2/) , (/lat1, lat2/) ,pres)
+  ;dum(1)= gsn_add_polyline(wks,plot(1),(/lon1, lon2/) , (/lat1, lat2/) ,pres)
   ;draw(plot)
   ;frame(wks)
 
@@ -204,8 +217,8 @@ begin
 ; make the panel
 ;************************************************
 
-  gsn_panel(wks,plot,(/1,2/),resP)
-
+  ;gsn_panel(wks,plot,(/1,2/),resP)
+  gsn_panel(wks,plot,(/1,1/),resP)
   frame(wks)
 
 exit
