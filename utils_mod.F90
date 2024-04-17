@@ -164,7 +164,7 @@ contains
 
     ! local variables
     integer :: ii
-    real(kind=8) :: urot, vrot
+    real(kind=8), dimension(dims(1)*dims(2)) :: urot, vrot
     character(len=240) :: wgtsfile
     character(len=20) :: subname = 'getvecpair2d'
 
@@ -177,12 +177,13 @@ contains
     call getfield(fname, vname2, dims=dims, field=vecpair(:,2), wgts=trim(wgtsfile))
     if (debug)write(logunit,'(a)')'wgtsfile for 2d vector '//trim(vname2)//'   '//trim(wgtsfile)
 
+    urot = 0.0; vrot = 0.0
     do ii = 1,dims(1)*dims(2)
-       urot = vecpair(ii,1)*cosrot(ii) + vecpair(ii,2)*sinrot(ii)
-       vrot = vecpair(ii,2)*cosrot(ii) - vecpair(ii,1)*sinrot(ii)
-       vecpair(ii,1) = urot
-       vecpair(ii,2) = vrot
+       urot(ii) = vecpair(ii,1)*cosrot(ii) + vecpair(ii,2)*sinrot(ii)
+       vrot(ii) = vecpair(ii,2)*cosrot(ii) - vecpair(ii,1)*sinrot(ii)
     end do
+    vecpair(:,1) = urot(:)
+    vecpair(:,2) = vrot(:)
 
     if (debug) write(logunit,'(a)')'exit '//trim(subname)
   end subroutine getvecpair2d
