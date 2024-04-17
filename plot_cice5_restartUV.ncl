@@ -13,19 +13,19 @@ begin
   hemi="NH"
   ;hemi="SH"
 
-  minlat = 66.0
-  ;minlat = 76.0
+  ;minlat = 66.0
+  minlat = 76.0
   ;minlat = 88.0
   ;minlat=80.0
   ;vmag = 0.5
   ;vthn = 0.015
   vthn = 0.008
-  vmag = 1.0
+  vmag = 0.75
 
   rad2deg=1.0
   ;rad2deg=180.d0/acos(-1.0d0)
 
-  plot_src = 0
+  plot_src = 1
 
 ;************************************************
 ; read in netCDF file
@@ -36,11 +36,11 @@ begin
   RT3 = "/scratch3/NCEPDEV/stmp3/Denise.Worthen/"
   RT4 = "/scratch4/NCEPDEV/stmp4/Denise.Worthen/"
   ; ics from baseline
-  ICBL = "/scratch2/NAGAPE/epic/UFS-WM_RT/NEMSfv3gfs/input-data-20221101/CICE_IC/"
+  ;ICBL = "/scratch2/NAGAPE/epic/UFS-WM_RT/NEMSfv3gfs/input-data-20221101/CICE_IC/"
 
   cres = "025"
-  icelonname = "lonBu"
-  icelatname = "latBu"
+  ;icelonname = "lonBu"
+  ;icelatname = "latBu"
   anglename = "angle"
   plottitle = "restart"
 
@@ -53,14 +53,20 @@ begin
     ;ifile = addfile(icdir+fname,"r")
     ;print(ifile)
     ;vmag = 1.0
-    icdir="/scratch1/NCEPDEV/stmp2/Denise.Worthen/tripole/fix.mx025/"
-    fname = "iced.2011-10-03-00000.nc"
-    ifile = addfile(icdir+"RESTART/"+fname,"r")
-    vmag = 1.0
+    ;icdir="/scratch1/NCEPDEV/stmp2/Denise.Worthen/tripole/fix.mx025/"
+    ;fname = "iced.2011-10-03-00000.nc"
+    ;ifile = addfile(icdir+"RESTART/"+fname,"r")
 
+    fname="testsrc.Ct_ew.nc"
+    icelonname = "lonCt"
+    icelatname = "latCt"
+    print(fname)
+    ifile = addfile(fname,"r")
       wkstitle=fname
-      ut = ifile->uvel(:,:)
-      vt = ifile->vvel(:,:)
+      ;ut = ifile->uvel(:,:)
+      ;vt = ifile->vvel(:,:)
+      ut = ifile->vecsrc(0,:,:)
+      vt = ifile->vecsrc(1,:,:)
     end if
 
     if (plot_src .eq. 0)then
@@ -81,26 +87,26 @@ begin
     vt@lat2d=gr->$icelatname$
 
     ;maskvar = gr->wet(:,:)
-    maskvar = todouble(gr->wet(:,:))
-    maskvar@lon2d = gr->lonBu
-    maskvar@lat2d = gr->latBu
-    printVarSummary(maskvar)
+    ;maskvar = todouble(gr->wet(:,:))
+    ;maskvar@lon2d = gr->lonBu
+    ;maskvar@lat2d = gr->latBu
+    ;printVarSummary(maskvar)
  ; copy metadata, rotang here is same sign as internal CICE (-1*sin,+1*cos mom)
-    rotang = gr->$anglename$
-    printVarSummary(rotang)
-    printVarSummary(ut)
-    urot = ut
-    vrot = vt
-    urot = cos(rotang)*ut - sin(rotang)*vt
-    vrot = sin(rotang)*ut + cos(rotang)*vt
+   ;  rotang = gr->$anglename$
+   ;  printVarSummary(rotang)
+   ;  printVarSummary(ut)
+   ;  urot = ut
+   ;  vrot = vt
+   ;  urot = cos(rotang)*ut - sin(rotang)*vt
+   ;  vrot = sin(rotang)*ut + cos(rotang)*vt
 
-    urot = where(urot@lat2d .ge. minlat .and. maskvar .eq. 1.0, urot, 0.0)
-    vrot = where(vrot@lat2d .ge. minlat .and. maskvar .eq. 1.0, vrot, 0.0)
-    print("urot min = "+min(urot)+" urot max = "+max(urot))
-    print("vrot min = "+min(vrot)+" vrot max = "+max(vrot))
+   ;  urot = where(urot@lat2d .ge. minlat .and. maskvar .eq. 1.0, urot, 0.0)
+   ;  vrot = where(vrot@lat2d .ge. minlat .and. maskvar .eq. 1.0, vrot, 0.0)
+   ;  print("urot min = "+min(urot)+" urot max = "+max(urot))
+   ;  print("vrot min = "+min(vrot)+" vrot max = "+max(vrot))
 
-   ;urot = where(maskvar .eq. 0.0, default_fillvalue(typeof(urot)), urot)
-   ;vrot = where(maskvar .eq. 0.0, default_fillvalue(typeof(vrot)), vrot)
+   ; ;urot = where(maskvar .eq. 0.0, default_fillvalue(typeof(urot)), urot)
+   ; ;vrot = where(maskvar .eq. 0.0, default_fillvalue(typeof(vrot)), vrot)
 
 
     levs = (/-0.2, 0.2, .02/)
@@ -196,7 +202,7 @@ begin
 ;************************************************
 
   ;plot = gsn_csm_vector_scalar_map_polar(wks,urot,vrot,avar,res)    ; create the plot
-  plot(0) = gsn_csm_vector_map_polar(wks,urot,vrot,res)    ; create the plot
+  plot(0) = gsn_csm_vector_map_polar(wks,ut,vt,res)    ; create the plot
   ;plot(0) = gsn_csm_contour_map_polar(wks,urot,res)    ; create the plot
   ;plot(1) = gsn_csm_contour_map_polar(wks,vrot,res)
   ;dum(0) gsn_add_polyline(wks,plot(0),(/lon1, lon2/) , (/lat1, lat2/) ,pres)

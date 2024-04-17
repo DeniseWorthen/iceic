@@ -178,8 +178,8 @@ contains
     if (debug)write(logunit,'(a)')'wgtsfile for 2d vector '//trim(vname2)//'   '//trim(wgtsfile)
 
     do ii = 1,dims(1)*dims(2)
-       urot = vecpair(ii,1)*cosrot(ii) - vecpair(ii,2)*sinrot(ii)
-       vrot = vecpair(ii,2)*cosrot(ii) + vecpair(ii,1)*sinrot(ii)
+       urot = vecpair(ii,1)*cosrot(ii) + vecpair(ii,2)*sinrot(ii)
+       vrot = vecpair(ii,2)*cosrot(ii) - vecpair(ii,1)*sinrot(ii)
        vecpair(ii,1) = urot
        vecpair(ii,2) = vrot
     end do
